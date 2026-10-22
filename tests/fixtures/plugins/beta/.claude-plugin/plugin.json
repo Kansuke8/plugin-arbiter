@@ -1,0 +1,5 @@
+{
+  "name": "beta",
+  "hooks": ["./hooks/extra.json", "./hooks/missing.json"],
+  "mcpServers": {"gh": {"command": "npx", "args": ["-y", "@mcp/github"]}}
+}

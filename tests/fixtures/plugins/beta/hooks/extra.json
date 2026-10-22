@@ -1,0 +1,1 @@
+{"hooks": {"PreToolUse": [{"matcher": "Edit|Bash", "hooks": [{"type": "command", "command": "beta-lint"}]}]}}
