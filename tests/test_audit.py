@@ -50,6 +50,7 @@ def test_missing_paths_are_skipped_not_raised(result):
 def test_detects_expected_conflicts_only(result):
     findings = detect(result["sources"])
     assert [f["summary"] for f in kinds(findings, "skill-name")] == ["`review` is defined by 2 sources"]
+    assert kinds(findings, "skill-name")[0]["items"] == ["alpha@test: skills/review/SKILL.md", "beta@test: skills/review/SKILL.md"]
     similar = kinds(findings, "skill-description")
     assert len(similar) == 1 and "deploy" not in similar[0]["summary"]
     hooks = kinds(findings, "hook")

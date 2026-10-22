@@ -1,5 +1,6 @@
 """Collect skills, hooks and MCP servers from installed plugins and user/project config."""
 import json
+import os
 from pathlib import Path
 
 # Every location arbiter reads. Claude Code layouts change between versions: edit them here only.
@@ -70,7 +71,7 @@ def _plugin(key, root, skipped):
     # plugin.json may point hooks/mcpServers at a path, a list of paths, or inline the config.
     for ref in _refs(manifest.get("hooks"), root / PLUGIN_HOOKS, root):
         data = ref if isinstance(ref, dict) else _read_json(ref, skipped)
-        src["hooks"] += _hooks(_unwrap(data, "hooks"), ref if isinstance(ref, Path) else root / PLUGIN_MANIFEST)
+        src["hooks"] += _hooks(_unwrap(data, "hooks"), _rel(ref if isinstance(ref, Path) else root / PLUGIN_MANIFEST, root))
     for ref in _refs(manifest.get("mcpServers"), root / PLUGIN_MCP, root):
         data = ref if isinstance(ref, dict) else _read_json(ref, skipped)
         src["mcp"].update(_dict(_unwrap(data, "mcpServers")))
@@ -82,7 +83,7 @@ def _config(name, root, skill_globs, settings_files, mcp_file, skipped):
     _add_skills(src, root, skill_globs, skipped)
     for rel in settings_files:
         if (root / rel).is_file():
-            src["hooks"] += _hooks(_dict(_read_json(root / rel, skipped)).get("hooks"), root / rel)
+            src["hooks"] += _hooks(_dict(_read_json(root / rel, skipped)).get("hooks"), rel)
     if mcp_file and (root / mcp_file).is_file():
         src["mcp"].update(_dict(_unwrap(_read_json(root / mcp_file, skipped), "mcpServers")))
     return src
@@ -106,7 +107,7 @@ def _hooks(events, origin):
             commands = [h.get("command") or h.get("prompt") or h.get("type", "")
                         for h in group.get("hooks", []) if isinstance(h, dict)]
             out.append({"event": event, "matcher": str(group.get("matcher") or ""),
-                        "commands": commands, "path": str(origin)})
+                        "commands": commands, "path": origin})
     return out
 
 
@@ -120,7 +121,7 @@ def _add_skills(src, root, globs, skipped):
                 continue
             default = path.parent.name if path.name == "SKILL.md" else path.stem
             src["skills"].append({"name": meta.get("name") or default,
-                                  "description": meta.get("description", ""), "path": str(path)})
+                                  "description": meta.get("description", ""), "path": _rel(path, root)})
 
 
 def parse_frontmatter(text):
@@ -148,6 +149,11 @@ def _read_json(path, skipped):
     except (OSError, ValueError) as e:
         skipped.append(f"could not read {path} ({type(e).__name__})")
         return None
+
+
+def _rel(path, root):
+    """Paths in findings are relative to their source root: short, and free of user-specific prefixes."""
+    return Path(os.path.relpath(path, root)).as_posix()
 
 
 def _unwrap(data, key):

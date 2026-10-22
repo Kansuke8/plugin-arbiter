@@ -30,7 +30,7 @@ def similar_skill_descriptions(sources, threshold):
         if score >= threshold:
             out.append(_finding("skill-description",
                                 f"`{sa}:{a['name']}` ~ `{sb}:{b['name']}` (similarity {score:.2f})",
-                                [a["path"], b["path"]], score=score))
+                                [f"{sa}: {a['path']}", f"{sb}: {b['path']}"], score=score))
     return sorted(out, key=lambda f: -f["score"])
 
 
