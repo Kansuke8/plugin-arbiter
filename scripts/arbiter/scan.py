@@ -16,16 +16,23 @@ PROJECT_MCP = ".mcp.json"
 
 
 def scan(claude_home, project=None):
-    """Return {"sources": [...], "skipped": [...]}. Missing or broken files are skipped, never raised."""
+    """Return {"sources", "disabled", "skipped"}. Missing or broken files are skipped, never raised."""
     claude_home = Path(claude_home)
-    sources, skipped = [], []
+    sources, disabled, skipped = [], [], []
+    enabled = enabled_plugins(claude_home, project, skipped)
 
     installed = _read_json(claude_home / INSTALLED_PLUGINS, skipped)
     seen = set()
     for key, entries in _dict(installed).get("plugins", {}).items():
+        if enabled.get(key) is False:
+            disabled.append(key)
+            continue
         for entry in entries:
             root = Path(entry.get("installPath", ""))
-            if root in seen:
+            # Project/local-scope installs only apply to the project they were installed in.
+            other_project = entry.get("projectPath") and (
+                not project or Path(entry["projectPath"]).resolve() != Path(project).resolve())
+            if root in seen or other_project:
                 continue
             seen.add(root)
             if root.is_dir():
@@ -36,7 +43,20 @@ def scan(claude_home, project=None):
     sources.append(_config("user", claude_home, USER_SKILLS, USER_SETTINGS, None, skipped))
     if project:
         sources.append(_config("project", Path(project), PROJECT_SKILLS, PROJECT_SETTINGS, PROJECT_MCP, skipped))
-    return {"sources": sources, "skipped": skipped}
+    # Settings files are read twice (enabledPlugins, hooks), so a broken one would be listed twice.
+    return {"sources": sources, "disabled": disabled, "skipped": list(dict.fromkeys(skipped))}
+
+
+def enabled_plugins(claude_home, project, skipped):
+    """Merge enabledPlugins from user, project and local settings; later files win per plugin."""
+    # shortcut: managed (enterprise) settings are ignored; add them as the highest layer if needed.
+    paths = [Path(claude_home) / rel for rel in USER_SETTINGS]
+    paths += [Path(project) / rel for rel in PROJECT_SETTINGS] if project else []  # PROJECT_SETTINGS: project, then local
+    merged = {}
+    for path in paths:
+        if path.is_file():
+            merged.update(_dict(_dict(_read_json(path, skipped)).get("enabledPlugins")))
+    return merged
 
 
 def _source(name, root):

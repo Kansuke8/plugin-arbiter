@@ -13,6 +13,7 @@ def to_markdown(result, findings):
     lines = ["# plugin-arbiter audit", "", "## Scanned", ""]
     lines += [f"- {s['name']}: {len(s['skills'])} skills, {len(s['hooks'])} hooks, {len(s['mcp'])} MCP servers"
               for s in result["sources"]]
+    lines += [f"- {name}: disabled by enabledPlugins, not checked" for name in result["disabled"]]
     for kind, title in SECTIONS.items():
         group = [f for f in findings if f["kind"] == kind]
         lines += ["", f"## {title} ({len(group)})", ""]

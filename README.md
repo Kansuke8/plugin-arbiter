@@ -28,6 +28,10 @@ It reads `~/.claude/plugins/installed_plugins.json`, each plugin's `plugin.json`
 `.claude/skills/` and `.mcp.json`. All paths live at the top of `scripts/arbiter/scan.py`.
 Missing or unreadable files are listed under "Skipped" instead of failing.
 
+Plugins turned off in `enabledPlugins` are left out. The user, project (`.claude/settings.json`) and local
+(`.claude/settings.local.json`) values are merged with the same precedence as Claude Code: local > project > user.
+Plugins with no entry are checked. Plugins installed at project scope are checked only in that project.
+
 The report lists candidates, not confirmed conflicts. Nothing is written.
 
 ## Standalone use
