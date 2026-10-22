@@ -50,10 +50,17 @@ Python 3.10+, standard library only.
 
 ## Development
 
+The plugin itself needs no dependencies. Tests use pytest, declared as a `dev` extra in `pyproject.toml`.
+Install it into a virtual environment, not your global Python:
+
 ```bash
-pip install pytest
+python -m venv .venv
+source .venv/bin/activate        # Windows (PowerShell): .venv\Scripts\Activate.ps1
+pip install -e ".[dev]"
 python -m pytest
 ```
+
+Tests run only against the dummy plugins in `tests/fixtures/`, never your real `~/.claude`.
 
 ## License
 

@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "plugin-arbiter"
 version = "0.1.0"
@@ -7,6 +11,10 @@ license = "MIT"
 
 [project.optional-dependencies]
 dev = ["pytest"]
+
+[tool.setuptools]
+package-dir = { "" = "scripts" }
+packages = ["arbiter"]
 
 [tool.pytest.ini_options]
 pythonpath = ["scripts"]
