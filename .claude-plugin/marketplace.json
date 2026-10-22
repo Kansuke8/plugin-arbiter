@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "plugin-arbiter",
+  "description": "Find conflicts between your installed Claude Code plugins.",
+  "owner": {
+    "name": "Kansuke8",
+    "url": "https://github.com/Kansuke8"
+  },
+  "plugins": [
+    {
+      "name": "plugin-arbiter",
+      "description": "Detect duplicate skills, overlapping hooks and duplicate MCP servers across installed plugins.",
+      "source": "./",
+      "category": "development"
+    }
+  ]
+}

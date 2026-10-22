@@ -2,6 +2,12 @@
   "name": "plugin-arbiter",
   "version": "0.1.0",
   "description": "Detect conflicts between Claude Code plugins: duplicate skills, overlapping hooks and MCP servers.",
+  "author": {
+    "name": "Kansuke8",
+    "url": "https://github.com/Kansuke8"
+  },
+  "homepage": "https://github.com/Kansuke8/plugin-arbiter",
+  "repository": "https://github.com/Kansuke8/plugin-arbiter",
   "license": "MIT",
   "keywords": ["plugins", "conflicts", "audit", "skills", "hooks", "mcp"]
 }
