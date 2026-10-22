@@ -1,0 +1,13 @@
+[project]
+name = "plugin-arbiter"
+version = "0.1.0"
+description = "Detect conflicts between Claude Code plugins."
+requires-python = ">=3.10"
+license = "MIT"
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.pytest.ini_options]
+pythonpath = ["scripts"]
+testpaths = ["tests"]

@@ -1,0 +1,7 @@
+{
+  "name": "plugin-arbiter",
+  "version": "0.1.0",
+  "description": "Detect conflicts between Claude Code plugins: duplicate skills, overlapping hooks and MCP servers.",
+  "license": "MIT",
+  "keywords": ["plugins", "conflicts", "audit", "skills", "hooks", "mcp"]
+}
