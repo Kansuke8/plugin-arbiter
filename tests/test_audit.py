@@ -86,6 +86,29 @@ def test_project_scoped_install_only_applies_to_its_project(tmp_path):
     assert "beta@test" in [s["name"] for s in scan(home, elsewhere)["sources"]]
 
 
+# Gaps found in the field test (group 1: review plugins). Remove xfail once each is implemented.
+@pytest.fixture
+def gamma(tmp_path):
+    install(tmp_path, ["alpha", "gamma"])
+    return scan(tmp_path)
+
+
+@pytest.mark.xfail(strict=True, reason="built-in command names are not known yet")
+def test_plugin_command_shadowed_by_builtin(gamma):
+    assert kinds(detect(gamma["sources"]), "builtin-name")
+
+
+@pytest.mark.xfail(strict=True, reason="agents/*.md are not scanned yet")
+def test_scan_reads_plugin_agents(gamma):
+    by_name = {s["name"]: s for s in gamma["sources"]}
+    assert "checker" in [sk["name"] for sk in by_name["gamma@test"]["skills"]]
+
+
+@pytest.mark.xfail(strict=True, reason="v0.2: short descriptions share no tokens; needs semantic judgment")
+def test_same_purpose_with_no_shared_words(gamma):
+    assert kinds(detect(gamma["sources"]), "skill-description")
+
+
 def test_matchers_overlap():
     assert matchers_overlap("Bash", "Edit|Bash")
     assert matchers_overlap("", "Write")
