@@ -1,50 +1,50 @@
-# プラグイン検証の手順
+# Field test procedure
 
-Gmail仕分けアプリ(実験台)にプラグインを段階的に入れ、実際に起きる衝突を記録して plugin-arbiter の改善に使うための手順。
+Install plugins step by step into a test-bed app (an email-sorting app) and record the conflicts that actually happen, so they can be fed back into plugin-arbiter.
 
-## 位置づけ
+## Purpose
 
-- これは **v0.2 に入る前に1周だけやる実地調査**。目的は v0.1 の検証ではなく、v0.2(意味レベルの判定)の**正解データ集め**
-- 観察した衝突はメモで終わらせず、**フィクスチャとテストに変える**(各グループ共通の流れの手順7)。1周したあとは、実験台ではなくフィクスチャとテストで開発を回す
-- v0.2 の判定(答えが毎回揺れる部分)は pytest ではなく `claude plugin eval` で測る。導入は v0.2 の実装を始めるとき
+- This is a **one-round field survey to run before starting v0.2** (semantic judgment). The goal is not to verify v0.1 but to **collect ground truth for v0.2**.
+- Do not leave observed conflicts as notes: **turn them into fixtures and tests** (step 7 of the common flow). After this one round, development runs on fixtures and tests, not on the test bed.
+- The v0.2 judgment (the part whose answer varies between runs) is measured with `claude plugin eval`, not pytest. Introduce it when starting the v0.2 implementation.
 
-## 基本ルール
+## Ground rules
 
-- インストールはすべて **local scope**(「Install for you, in this repo only」)。他のプロジェクトに影響させない
-- **1グループずつ**追加する。一度に全部入れると、どのプラグインが原因かわからなくなる
-- グループは**積み上げ式**(前のグループのプラグインは入れたまま)。困った度合いが「高」の衝突が出たときだけ、関係するプラグイン以外を一時的に無効にして切り分ける
-- 検証中は**本物のGmailにつながない**。ダミーデータだけで作業する
-- フック系のプラグインはローカルでコードを実行する。実験台のフォルダ以外で起動しない
-- 入れるのは公式マーケットプレイス(claude-plugins-official)のものだけ
-- コマンドは手で打つ(コピー時に `❯` などの記号が混ざらないように)
+- Install everything at **local scope** ("Install for you, in this repo only"), so other projects are not affected.
+- Add **one group at a time**. Adding everything at once makes it impossible to tell which plugin caused what.
+- Groups are **cumulative** (plugins from earlier groups stay installed). Only when a conflict has a "high" severity, temporarily disable every plugin except the ones involved to isolate it.
+- **Do not connect to a real mailbox** during the test. Work with dummy data only.
+- Hook plugins execute code locally. Do not launch them outside the test-bed folder.
+- Install only plugins from the official marketplace (claude-plugins-official).
+- Type commands by hand, so that symbols such as `❯` do not get mixed in when copying.
 
-## 準備
+## Setup
 
-1. 実験台のフォルダを作り、git を初期化する(GitHubに上げる場合は noreply アドレスの設定を忘れずに)
-2. フォルダで `claude` を起動
-3. 記録用に `notes/plugin-log.md` を作る(テンプレートは末尾)
+1. Create a test-bed folder and initialize git (if you push to GitHub, set up a noreply email address).
+2. Start `claude` in the folder.
+3. Create `notes/plugin-log.md` for records (template at the end).
 
-## グループ0:ベースライン(追加なし)
+## Group 0: baseline (nothing added)
 
-すでにユーザー単位で入っているプラグイン(ponytail など)だけの状態で始める。
+Start with only the plugins already installed at user scope.
 
-1. アプリは最小構成にする:ダミーメールの JSON を読み込み、ルールで仕分ける関数が1つあれば十分(`/audit` は静的スキャンなので、アプリの機能は結果に影響しない)
-2. `python <plugin-arbiter のパス>/scripts/audit.py --project . > notes/audit-group0.md` で生の出力を保存する
-3. この状態でコミット(以降の比較の基準になる)
+1. Keep the app minimal: loading dummy emails from JSON and one function that sorts them by rules is enough (`/audit` is a static scan, so app features do not affect its result).
+2. Save the raw output with `python <path to plugin-arbiter>/scripts/audit.py --project . > notes/audit-group0.md`.
+3. Commit in this state (it is the baseline for later comparisons).
 
-## 各グループ共通の流れ
+## Common flow for each group
 
-1. プラグインをインストール(local scope を選ぶ)
+1. Install the plugins (choose local scope).
 2. `/reload-plugins`
-3. 入れたプラグインの名前とバージョンを記録(`/plugin` の Installed タブで確認)
-4. そのグループが働く作業を実際にやる(下の「試す作業」)
-5. 気づいたことをメモ:どちらが動いたか、意図と違ったこと、指示がぶつかったこと
-   - どのスキル・フックが実際に呼ばれたかは、感想ではなくセッションの記録(`~/.claude/projects/` の jsonl)で確かめる
-   - 困った度合いが「高」のものは、同じ依頼を2〜3回繰り返し、毎回再現するかを見る
-   - 各衝突を3つの層に分類する(テンプレート参照)
-6. `python <plugin-arbiter のパス>/scripts/audit.py --project . > notes/audit-groupN.md` で生の出力を保存し、前のグループとの差分とメモを比べる
-7. 見逃し・誤検出を plugin-arbiter 側に戻す:1件ずつ `tests/fixtures/plugins/` の最小ダミープラグインに**書き直し**(実物の原文はコピーしない)、まだ通らないテストを1本足す
-8. メモとコードをコミット
+3. Record the name and version of each installed plugin (check the Installed tab of `/plugin`).
+4. Do the work that exercises the group (see "Task to try" below).
+5. Take notes on what you noticed: which one ran, what differed from your intent, which instructions clashed.
+   - Confirm which skills and hooks were actually invoked from the session transcript (the jsonl files under `~/.claude/projects/`), not from impressions.
+   - For conflicts with a "high" severity, repeat the same request 2-3 times and check whether it reproduces every time.
+   - Classify each conflict into one of three layers (see the template).
+6. Save the raw output with `python <path to plugin-arbiter>/scripts/audit.py --project . > notes/audit-groupN.md`, and compare the diff from the previous group against your notes.
+7. Feed misses and false positives back to plugin-arbiter: rewrite each one as a minimal dummy plugin under `tests/fixtures/plugins/` (**do not copy the original text**), and add one test that does not pass yet.
+8. Commit the notes and code.
 
 ### Verify against the official docs before adding a gap
 
@@ -52,96 +52,96 @@ Before turning an observation into a fixture and a failing test, check the inten
 
 Example: a command that shares its name with a bundled skill looked like a conflict. The docs say plugin commands are invoked with a namespace (`/plugin-name:command`), so they do not replace the bundled one. It was not a conflict, and arbiter does not report it.
 
-## グループ1:コードレビュー系
+## Group 1: code review
 
 ```
 /plugin install code-review@claude-plugins-official
 /plugin install pr-review-toolkit@claude-plugins-official
 ```
 
-**試す作業**:仕分けルールに機能を1つ足してから「この変更をレビューして」と頼む。どのレビュー機能が使われたか、組み込みの `/code-review` や ponytail のレビューと混ざっていないかを見る。
+**Task to try**: add one feature to the sorting rules, then ask "review this change". Check which review feature was used, and whether it got mixed up with the built-in `/code-review` or with a review skill from a plugin installed at user scope.
 
-## グループ2:開発の進め方系
+## Group 2: development workflow
 
 ```
 /plugin install superpowers@claude-plugins-official
 /plugin install feature-dev@claude-plugins-official
 ```
 
-**試す作業**:「ラベルごとの件数を集計する機能を追加して」と頼む。どちらの手順(ブレインストーミングから入るか、TDDか、feature-dev の段階か)に従ったか、ponytail の「最小の変更」と矛盾していないかを見る。
+**Task to try**: ask "add a feature that counts emails per label". Check which procedure was followed (starting from brainstorming, TDD, or feature-dev's stages), and whether it contradicts the "minimal change" policy of any plugin installed at user scope.
 
-## グループ3:フック系
+## Group 3: hooks
 
 ```
 /plugin install security-guidance@claude-plugins-official
 /plugin install hookify@claude-plugins-official
 ```
 
-**試す作業**:設定ファイルの読み込み部分を編集する。警告やフックが何回・どの順で動いたか、重複して出ていないかを見る。v0.1 のフック重複検出を実地で確かめられる唯一のグループなので、省略しない。
+**Task to try**: edit the config-loading part. Check how many times and in what order warnings and hooks fired, and whether any appeared twice. This is the only group that can confirm the v0.1 duplicate-hook detection in practice, so do not skip it.
 
-## 任意:ponytail なしの比較
+## Optional: comparison without a user-scope plugin
 
-ponytail はユーザー単位で常に有効なので、衝突の原因が ponytail かどうかを切り分けられない。グループ2で ponytail との衝突が「高」だった場合だけ、ponytail を無効にして同じ依頼を1回やり直す。
+A plugin installed at user scope is always enabled, so you cannot tell whether it is the cause of a conflict. Only if a conflict with it was "high" in group 2, disable it and repeat the same request once.
 
-## 任意のグループ
+## Optional groups
 
-v0.2 の範囲を決めるのに必要な場合だけ行う。
+Run these only if they are needed to decide the scope of v0.2.
 
-### グループ4:git系
+### Group 4: git
 
 ```
 /plugin install commit-commands@claude-plugins-official
 ```
 
-**試す作業**:変更をコミットしてもらう。コミットメッセージの書き方や手順が、組み込みの動きや他のプラグインの指示とぶつからないかを見る。
+**Task to try**: ask it to commit your changes. Check whether the commit message style and procedure clash with built-in behavior or with instructions from other plugins.
 
-github プラグイン(MCP)は GitHub の認証が必要なので任意。実験台を GitHub に置いた場合だけ追加する。
+The github plugin (MCP) needs GitHub authentication, so it is optional. Add it only if the test bed is hosted on GitHub.
 
-### グループ5:単純化系
+### Group 5: simplification
 
 ```
 /plugin install code-simplifier@claude-plugins-official
 ```
 
-**試す作業**:「このモジュールを整理して」と頼む。ponytail の方針や superpowers の手順とどう絡むかを見る。
+**Task to try**: ask it to "tidy up this module". Check how it interacts with the policies of plugins installed at user scope and with the superpowers procedure.
 
-## うまくいかないとき
+## When things go wrong
 
-- 「プラグインが見つからない」と出たら、`/plugin marketplace update claude-plugins-official` で一覧を更新するか、`/plugin` の Discover タブで名前を検索する
-- 名前が変わっている・見つからないものは、無理に探さず記録して次へ進む
+- If "plugin not found" appears, refresh the list with `/plugin marketplace update claude-plugins-official`, or search for the name in the Discover tab of `/plugin`.
+- If a plugin was renamed or cannot be found, do not hunt for it: record that and move on.
 
-## 後片付け
+## Cleanup
 
-検証が終わったプラグインは次で外せる。
+Remove plugins you have finished testing with:
 
 ```
-/plugin uninstall <プラグイン名>@claude-plugins-official
+/plugin uninstall <plugin name>@claude-plugins-official
 ```
 
-## 記録テンプレート(notes/plugin-log.md)
+## Record template (notes/plugin-log.md)
 
 ```markdown
-## グループN:〇〇系(YYYY-MM-DD)
+## Group N: <topic> (YYYY-MM-DD)
 
-### 環境
-- Claude Code のバージョン:
-- 入れたプラグイン:名前@マーケットプレイス:バージョン
+### Environment
+- Claude Code version:
+- Installed plugins: name@marketplace:version
 
-### 試した作業
+### Tasks tried
 - 
 
-### 気づいた衝突・違和感
-- 場面:
-  - 起きたこと:
-  - 原因と思われるプラグイン:
-  - 根拠(jsonl の該当箇所):
-  - 再現回数(N回中M回):
-  - 困った度合い(高/中/低):
-  - 層:(a) v0.1 で拾えるはず / (b) 意味の判定が必要(v0.2) / (c) 静的には見えない(実行時の注入文・組み込み機能など)
+### Conflicts and oddities noticed
+- Situation:
+  - What happened:
+  - Suspected plugin:
+  - Evidence (relevant jsonl location):
+  - Reproduction (M of N runs):
+  - Severity (high/medium/low):
+  - Layer: (a) v0.1 should catch it / (b) needs semantic judgment (v0.2) / (c) not visible statically (runtime-injected text, built-in features, etc.)
 
-### /audit の結果(notes/audit-groupN.md)
-- 検出された件数:
-- メモにあって /audit が見逃したもの:
-- /audit が出したが実際は問題なかったもの:
-- フィクスチャとテストにしたもの:
+### /audit result (notes/audit-groupN.md)
+- Number of findings:
+- Things in the notes that /audit missed:
+- Things /audit reported that were actually fine:
+- Turned into fixtures and tests:
 ```
