@@ -6,6 +6,7 @@ SECTIONS = {
     "hook": "Hooks on the same event and matcher",
     "mcp-name": "Duplicate MCP server names",
     "mcp-command": "Same MCP server under different names",
+    "builtin-name": "Commands that may be confused with built-in commands",
 }
 
 

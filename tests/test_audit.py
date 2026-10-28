@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from arbiter.__main__ import main
-from arbiter.detect import detect, matchers_overlap, tokens
+from arbiter.detect import builtin_name_shadowing, detect, matchers_overlap, tokens
 from arbiter.scan import parse_frontmatter, scan
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -93,9 +93,16 @@ def gamma(tmp_path):
     return scan(tmp_path)
 
 
-@pytest.mark.xfail(strict=True, reason="built-in command names are not known yet")
 def test_plugin_command_shadowed_by_builtin(gamma):
-    assert kinds(detect(gamma["sources"]), "builtin-name")
+    found = builtin_name_shadowing(gamma["sources"], {"code-review"})  # dummy list, independent of the real one
+    assert [f["items"] for f in found] == [["gamma@test: commands/code-review.md"]]
+    assert "may be confused" in found[0]["summary"]
+
+
+def test_builtin_check_ignores_skills_agents_and_unlisted_names(gamma):
+    # alpha has skills `review`/`deploy`, gamma has agent `checker`: same names as the list, but not commands.
+    assert builtin_name_shadowing(gamma["sources"], {"review", "deploy", "checker"}) == []
+    assert builtin_name_shadowing(gamma["sources"], {"unrelated"}) == []
 
 
 def test_scan_reads_plugin_agents(gamma):

@@ -131,6 +131,7 @@ All paths are defined at the top of [`scripts/arbiter/scan.py`](scripts/arbiter/
 
 - Managed (enterprise) settings and MCP servers in `~/.claude.json` are not read yet.
 - MCP *tool* names are not compared, because that would mean starting every server. Servers are compared by name and command.
+- The built-in command names used for the shadowing check are a static list (fetched 2026-10-28) and may be out of date for your Claude Code version.
 - Hook matchers that are full regular expressions (such as `mcp__.*`) are compared as plain text.
 
 ## Roadmap

@@ -4,11 +4,25 @@ from itertools import combinations
 
 STOPWORDS = frozenset("the and for use when this that with from your you are any not only into its".split())
 WILDCARD_MATCHERS = {"", "*", ".*"}
+# Built-in slash commands and their aliases (bundled skills such as `code-review` are not included).
+# Source: https://code.claude.com/docs/en/commands.md, fetched 2026-10-28.
+# Static snapshot: the set changes between Claude Code versions, so refresh it from that page.
+BUILTIN_COMMANDS = frozenset("""
+    add-dir advisor agents artifacts auto-mode-setup autocompact autofix-pr background bg branch btw bug share cd
+    chrome clear reset new color compact config settings context copy cost design-login desktop app diff effort exit
+    quit export fast feedback fork focus goal heapdump help hooks ide import init insights install-github-app install-
+    slack-app keybindings list-agents peers login logout mcp memory mobile ios android model output-style passes
+    permissions allowed-tools plan plugin powerup privacy-settings radio rate-limit-options recap release-notes
+    reload-plugins reload-skills remote-control rc remote-env rename resume continue rewind checkpoint undo sandbox
+    schedule routines scroll-speed security-review setup-bedrock setup-vertex skill-doctor skills status statusline
+    stickers stop subtask tasks bashes team-onboarding teleport tp terminal-setup theme tui ultrareview upgrade usage
+    stats usage-credits voice web-setup workflows
+    """.split())
 
 
 def detect(sources, threshold=0.3):
     return (duplicate_skill_names(sources) + similar_skill_descriptions(sources, threshold)
-            + overlapping_hooks(sources) + duplicate_mcp_servers(sources))
+            + overlapping_hooks(sources) + duplicate_mcp_servers(sources) + builtin_name_shadowing(sources))
 
 
 def duplicate_skill_names(sources):
@@ -59,6 +73,13 @@ def duplicate_mcp_servers(sources):
             for command, hits in sorted(by_command.items())
             if command and len(hits) > 1 and len({n.lower() for _, n in hits}) > 1]
     return out
+
+
+def builtin_name_shadowing(sources, builtin_names=BUILTIN_COMMANDS):
+    """Plugin commands named like a built-in. Only commands count: skills and agents are other namespaces."""
+    return [_finding("builtin-name", f"`{src}:/{sk['name']}` may be confused with built-in command `/{sk['name'].lower()}`",
+                     [f"{src}: {sk['path']}"])
+            for src, sk in _items(sources, "skills") if sk["kind"] == "command" and sk["name"].lower() in builtin_names]
 
 
 def matchers_overlap(m1, m2):
