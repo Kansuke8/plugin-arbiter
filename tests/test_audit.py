@@ -136,6 +136,25 @@ def test_agents_with_same_name_are_a_duplicate_and_user_project_agents_are_read(
     assert [f["summary"] for f in kinds(detect(sources), "skill-name")] == ["`helper` is defined by 2 sources"]
 
 
+def test_same_named_agents_in_two_plugins_are_not_reported(tmp_path):
+    # delta and epsilon both define agent `helper`; plugin agents are namespaced (docs, fetched 2026-10-28:
+    # https://code.claude.com/docs/en/sub-agents), so this is not a conflict.
+    install(tmp_path, ["delta", "epsilon"])
+    findings = detect(scan(tmp_path)["sources"])
+    assert not kinds(findings, "skill-name") and not kinds(findings, "agent-shadow")
+
+
+def test_plugin_agent_hidden_by_project_agent_is_reported(tmp_path):
+    # Priority is project > user > plugin (docs, fetched 2026-10-28: https://code.claude.com/docs/en/sub-agents).
+    home, project = tmp_path / "home", tmp_path / "project"
+    install(home, ["delta"])
+    write_md(project / ".claude/agents/helper.md", "helper")
+    findings = detect(scan(home, project)["sources"])
+    assert [f["items"] for f in kinds(findings, "agent-shadow")] == [
+        ["delta@test: agents/helper.md", "project: .claude/agents/helper.md"]]
+    assert not kinds(findings, "skill-name")
+
+
 def test_matchers_overlap():
     assert matchers_overlap("Bash", "Edit|Bash")
     assert matchers_overlap("", "Write")

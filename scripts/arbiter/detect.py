@@ -22,13 +22,17 @@ BUILTIN_COMMANDS = frozenset("""
 
 def detect(sources, threshold=0.3):
     return (duplicate_skill_names(sources) + similar_skill_descriptions(sources, threshold)
-            + overlapping_hooks(sources) + duplicate_mcp_servers(sources) + builtin_name_shadowing(sources))
+            + overlapping_hooks(sources) + duplicate_mcp_servers(sources) + builtin_name_shadowing(sources)
+            + agent_shadowing(sources))
 
 
 def duplicate_skill_names(sources):
     # Agents live in their own namespace: they only collide with other agents, never with skills or commands.
+    # Plugin agents are namespaced (`plugin:agent`), so two plugins never collide; see agent_shadowing.
     by_name = {}
     for src, skill in _items(sources, "skills"):
+        if skill["kind"] == "agent" and _is_plugin(src):
+            continue
         by_name.setdefault((skill["kind"] == "agent", skill["name"].lower()), []).append((src, skill))
     return [_finding("skill-name", f"`{name}` is defined by {len({s for s, _ in hits})} sources",
                      [f"{s}: {sk['path']}" for s, sk in hits])
@@ -82,6 +86,17 @@ def builtin_name_shadowing(sources, builtin_names=BUILTIN_COMMANDS):
             for src, sk in _items(sources, "skills") if sk["kind"] == "command" and sk["name"].lower() in builtin_names]
 
 
+def agent_shadowing(sources):
+    """Plugin agents that a same-named user or project agent may hide (project > user > plugin)."""
+    plugin, config = {}, {}
+    for src, sk in _items(sources, "skills"):
+        if sk["kind"] == "agent":
+            (plugin if _is_plugin(src) else config).setdefault(sk["name"].lower(), []).append((src, sk))
+    return [_finding("agent-shadow", f"`{name}` is a plugin agent and also a user or project agent, which takes priority",
+                     [f"{s}: {sk['path']}" for s, sk in plugin[name] + config[name]])
+            for name in sorted(plugin.keys() & config.keys())]
+
+
 def matchers_overlap(m1, m2):
     # shortcut: `a|b` alternatives are compared literally; real regex matchers (e.g. `mcp__.*`) need regex intersection.
     if m1 in WILDCARD_MATCHERS or m2 in WILDCARD_MATCHERS:
@@ -95,6 +110,10 @@ def tokens(text):
     words = {w for w in re.findall(r"[a-z0-9]{3,}", text) if w not in STOPWORDS}
     runs = re.findall(r"[^\x00-\x7f\s、。,.()()「」]+", text)
     return words | {run[i:i + 2] for run in runs for i in range(len(run) - 1)}
+
+
+def _is_plugin(source_name):
+    return source_name not in ("user", "project")
 
 
 def _items(sources, key):
