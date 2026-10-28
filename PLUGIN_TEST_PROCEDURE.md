@@ -41,6 +41,8 @@ Start with only the plugins already installed at user scope.
 5. Take notes on what you noticed: which one ran, what differed from your intent, which instructions clashed.
    - Confirm which skills and hooks were actually invoked from the session transcript (the jsonl files under `~/.claude/projects/`), not from impressions.
    - For conflicts with a "high" severity, repeat the same request 2-3 times and check whether it reproduces every time.
+     - Run each repetition **serially**. Running them in parallel lets one run see the other's edits.
+     - Between repetitions, reset the working tree to its initial state (for example `git stash push -u`).
    - Classify each conflict into one of three layers (see the template).
 6. Save the raw output with `python <path to plugin-arbiter>/scripts/audit.py --project . > notes/audit-groupN.md`, and compare the diff from the previous group against your notes.
 7. Feed misses and false positives back to plugin-arbiter: rewrite each one as a minimal dummy plugin under `tests/fixtures/plugins/` (**do not copy the original text**), and add one test that does not pass yet.
