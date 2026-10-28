@@ -3,7 +3,7 @@
 SECTIONS = {
     "skill-name": "Duplicate skill names",
     "skill-description": "Similar skill descriptions",
-    "hook": "Hooks on the same event and matcher",
+    "hook": "Hooks on the same event and matcher (advisory: they run in parallel)",
     "mcp-name": "Duplicate MCP server names",
     "mcp-command": "Same MCP server under different names",
     "agent-shadow": "Plugin agents that may be hidden by user or project agents",

@@ -57,7 +57,8 @@ def overlapping_hooks(sources):
     out = []
     for (sa, a), (sb, b) in combinations(list(_items(sources, "hooks")), 2):
         if sa != sb and a["event"] == b["event"] and matchers_overlap(a["matcher"], b["matcher"]):
-            out.append(_finding("hook", f"{a['event']}: `{sa}` [{a['matcher'] or '*'}] and `{sb}` [{b['matcher'] or '*'}]",
+            out.append(_finding("hook", f"{a['event']}: `{sa}` [{a['matcher'] or '*'}] and `{sb}` [{b['matcher'] or '*'}] "
+                                     "may both inject instructions; hooks run in parallel, order is not guaranteed",
                                 [f"{sa}: {a['path']}", f"{sb}: {b['path']}"]))
     return out
 

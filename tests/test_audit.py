@@ -55,6 +55,9 @@ def test_detects_expected_conflicts_only(result):
     assert len(similar) == 1 and "deploy" not in similar[0]["summary"]
     hooks = kinds(findings, "hook")
     assert len(hooks) == 1 and "PreToolUse" in hooks[0]["summary"]  # project's PostToolUse does not collide
+    # Hooks on one event all run in parallel and all pass additionalContext (docs, fetched 2026-10-28:
+    # https://code.claude.com/docs/en/hooks), so the finding is advisory and says order is not guaranteed.
+    assert "parallel" in hooks[0]["summary"] and "not guaranteed" in hooks[0]["summary"]
     assert kinds(findings, "mcp-name")[0]["items"] == ["alpha@test: github", "project: GitHub"]
     assert kinds(findings, "mcp-command")[0]["items"] == ["alpha@test: github", "beta@test: gh"]
 

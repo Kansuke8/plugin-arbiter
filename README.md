@@ -77,9 +77,9 @@ This report comes from the dummy plugins in [`tests/fixtures/`](tests/fixtures/)
   - alpha@demo: skills/review/SKILL.md
   - beta@demo: skills/review/SKILL.md
 
-## Hooks on the same event and matcher (1)
+## Hooks on the same event and matcher (advisory: they run in parallel) (1)
 
-- PreToolUse: `alpha@demo` [Bash] and `beta@demo` [Edit|Bash]
+- PreToolUse: `alpha@demo` [Bash] and `beta@demo` [Edit|Bash] may both inject instructions; hooks run in parallel, order is not guaranteed
   - alpha@demo: hooks/hooks.json
   - beta@demo: hooks/extra.json
 
@@ -133,6 +133,7 @@ All paths are defined at the top of [`scripts/arbiter/scan.py`](scripts/arbiter/
 - MCP *tool* names are not compared, because that would mean starting every server. Servers are compared by name and command.
 - The built-in command names used for the shadowing check are a static list (fetched 2026-10-28) and may be out of date for your Claude Code version.
 - The behavior when two plugins define an agent with the same name and it is called without a namespace is not documented, so it is unverified. Same-named agents from different plugins are therefore not reported.
+- Hooks on the same event are reported as an advisory only. Whether their instructions contradict each other is not judged here; that is left to v0.2.
 - Hook matchers that are full regular expressions (such as `mcp__.*`) are compared as plain text.
 
 ## Roadmap
