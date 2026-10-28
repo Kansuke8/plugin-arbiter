@@ -12,12 +12,13 @@ def detect(sources, threshold=0.3):
 
 
 def duplicate_skill_names(sources):
+    # Agents live in their own namespace: they only collide with other agents, never with skills or commands.
     by_name = {}
     for src, skill in _items(sources, "skills"):
-        by_name.setdefault(skill["name"].lower(), []).append((src, skill))
+        by_name.setdefault((skill["kind"] == "agent", skill["name"].lower()), []).append((src, skill))
     return [_finding("skill-name", f"`{name}` is defined by {len({s for s, _ in hits})} sources",
                      [f"{s}: {sk['path']}" for s, sk in hits])
-            for name, hits in sorted(by_name.items()) if len({s for s, _ in hits}) > 1]
+            for (_, name), hits in sorted(by_name.items()) if len({s for s, _ in hits}) > 1]
 
 
 def similar_skill_descriptions(sources, threshold):

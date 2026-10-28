@@ -6,12 +6,13 @@ from pathlib import Path
 # Every location arbiter reads. Claude Code layouts change between versions: edit them here only.
 INSTALLED_PLUGINS = "plugins/installed_plugins.json"  # under ~/.claude
 PLUGIN_MANIFEST = ".claude-plugin/plugin.json"
-PLUGIN_SKILLS = ("skills/*/SKILL.md", "commands/*.md")
+PLUGIN_SKILLS = (("skills/*/SKILL.md", "skill"), ("commands/*.md", "command"), ("agents/*.md", "agent"))
 PLUGIN_HOOKS = "hooks/hooks.json"
 PLUGIN_MCP = ".mcp.json"
-USER_SKILLS = ("skills/*/SKILL.md", "commands/*.md")  # under ~/.claude
+USER_SKILLS = (("skills/*/SKILL.md", "skill"), ("commands/*.md", "command"), ("agents/*.md", "agent"))  # under ~/.claude
 USER_SETTINGS = ("settings.json",)
-PROJECT_SKILLS = (".claude/skills/*/SKILL.md", ".claude/commands/*.md")
+PROJECT_SKILLS = ((".claude/skills/*/SKILL.md", "skill"), (".claude/commands/*.md", "command"),
+                  (".claude/agents/*.md", "agent"))
 PROJECT_SETTINGS = (".claude/settings.json", ".claude/settings.local.json")
 PROJECT_MCP = ".mcp.json"
 
@@ -112,7 +113,7 @@ def _hooks(events, origin):
 
 
 def _add_skills(src, root, globs, skipped):
-    for pattern in globs:
+    for pattern, kind in globs:
         for path in sorted(root.glob(pattern)):
             try:
                 meta = parse_frontmatter(path.read_text(encoding="utf-8", errors="replace"))
@@ -121,7 +122,7 @@ def _add_skills(src, root, globs, skipped):
                 continue
             default = path.parent.name if path.name == "SKILL.md" else path.stem
             src["skills"].append({"name": meta.get("name") or default,
-                                  "description": meta.get("description", ""), "path": _rel(path, root)})
+                                  "description": meta.get("description", ""), "kind": kind, "path": _rel(path, root)})
 
 
 def parse_frontmatter(text):

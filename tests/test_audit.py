@@ -98,7 +98,6 @@ def test_plugin_command_shadowed_by_builtin(gamma):
     assert kinds(detect(gamma["sources"]), "builtin-name")
 
 
-@pytest.mark.xfail(strict=True, reason="agents/*.md are not scanned yet")
 def test_scan_reads_plugin_agents(gamma):
     by_name = {s["name"]: s for s in gamma["sources"]}
     assert "checker" in [sk["name"] for sk in by_name["gamma@test"]["skills"]]
@@ -107,6 +106,27 @@ def test_scan_reads_plugin_agents(gamma):
 @pytest.mark.xfail(strict=True, reason="v0.2: short descriptions share no tokens; needs semantic judgment")
 def test_same_purpose_with_no_shared_words(gamma):
     assert kinds(detect(gamma["sources"]), "skill-description")
+
+
+def write_md(path, name):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(f"---\nname: {name}\ndescription: Dummy.\n---\n")
+
+
+def test_agent_with_same_name_as_skill_is_not_a_duplicate(tmp_path):
+    home, project = tmp_path / "home", tmp_path / "project"
+    write_md(home / "skills/review/SKILL.md", "review")
+    write_md(project / ".claude/agents/review.md", "review")
+    assert not kinds(detect(scan(home, project)["sources"]), "skill-name")
+
+
+def test_agents_with_same_name_are_a_duplicate_and_user_project_agents_are_read(tmp_path):
+    home, project = tmp_path / "home", tmp_path / "project"
+    write_md(home / "agents/helper.md", "helper")
+    write_md(project / ".claude/agents/helper.md", "helper")
+    sources = scan(home, project)["sources"]
+    assert [sk["kind"] for s in sources for sk in s["skills"]] == ["agent", "agent"]
+    assert [f["summary"] for f in kinds(detect(sources), "skill-name")] == ["`helper` is defined by 2 sources"]
 
 
 def test_matchers_overlap():
