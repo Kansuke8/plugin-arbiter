@@ -46,6 +46,12 @@ Gmail仕分けアプリ(実験台)にプラグインを段階的に入れ、実�
 7. 見逃し・誤検出を plugin-arbiter 側に戻す:1件ずつ `tests/fixtures/plugins/` の最小ダミープラグインに**書き直し**(実物の原文はコピーしない)、まだ通らないテストを1本足す
 8. メモとコードをコミット
 
+### Verify against the official docs before adding a gap
+
+Before turning an observation into a fixture and a failing test, check the intended behavior in the official Claude Code docs. An observation may be expected behavior, not a gap.
+
+Example: a command that shares its name with a bundled skill looked like a conflict. The docs say plugin commands are invoked with a namespace (`/plugin-name:command`), so they do not replace the bundled one. It was not a conflict, and arbiter does not report it.
+
 ## グループ1:コードレビュー系
 
 ```
