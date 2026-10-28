@@ -94,8 +94,8 @@ def gamma(tmp_path):
 
 
 def test_plugin_command_shadowed_by_builtin(gamma):
-    found = builtin_name_shadowing(gamma["sources"], {"code-review"})  # dummy list, independent of the real one
-    assert [f["items"] for f in found] == [["gamma@test: commands/code-review.md"]]
+    found = builtin_name_shadowing(gamma["sources"], {"ship-it"})  # dummy list, independent of the real one
+    assert [f["items"] for f in found] == [["gamma@test: commands/ship-it.md"]]
     assert "may be confused" in found[0]["summary"]
 
 
