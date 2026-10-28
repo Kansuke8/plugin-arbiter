@@ -110,7 +110,7 @@ def test_scan_reads_plugin_agents(gamma):
     assert "checker" in [sk["name"] for sk in by_name["gamma@test"]["skills"]]
 
 
-@pytest.mark.xfail(strict=True, reason="v0.2: short descriptions share no tokens; needs semantic judgment")
+@pytest.mark.xfail(strict=True, reason="deferred to v0.2 semantic judgment")
 def test_same_purpose_with_no_shared_words(gamma):
     assert kinds(detect(gamma["sources"]), "skill-description")
 
